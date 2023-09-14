@@ -88,7 +88,7 @@ class S3Storage {
                 .pipe(operators_1.map((size) => {
                 const resizerStream = transformer_1.default(sharpOpts, size);
                 if (size.suffix === 'original') {
-                    size.Body = stream.pipe(sharp());
+                    size.Body = stream.pipe(sharp({ animated: true }));
                 }
                 else {
                     size.Body = stream.pipe(resizerStream);
