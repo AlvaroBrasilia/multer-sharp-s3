@@ -126,7 +126,7 @@ export class S3Storage implements StorageEngine {
           map((size) => {
             const resizerStream = transformer(sharpOpts, size)
             if (size.suffix === 'original') {
-              size.Body = stream.pipe(sharp())
+              size.Body = stream.pipe(sharp({ animated: true }))
             } else {
               size.Body = stream.pipe(resizerStream)
             }
@@ -163,7 +163,7 @@ export class S3Storage implements StorageEngine {
               ContentType,
               Key: size.directory ? `${size.directory}/${key}` : key,
             }
-            
+
             const upload = opts.s3.upload(newParams)
             let currentSize = { [size.suffix]: 0 }
             upload.on('httpUploadProgress', function(ev) {
