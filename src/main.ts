@@ -33,6 +33,7 @@ export class S3Storage implements StorageEngine {
     Bucket: process.env.AWS_BUCKET || null,
     Key: defaultKey,
     multiple: false,
+    multipart: true, // Enable multipart uploads
   }
 
   constructor(options: S3StorageOptions) {
