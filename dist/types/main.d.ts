@@ -6,11 +6,11 @@ import { Request } from 'express';
 import { S3 } from 'aws-sdk';
 import defaultKey from './get-filename';
 import { S3StorageOptions, SharpOptions } from './types';
-export declare type EStream = {
+export type EStream = {
     stream: NodeJS.ReadableStream & sharp.Sharp;
 };
-export declare type EFile = Express.Multer.File & EStream & Partial<S3.Types.PutObjectRequest>;
-export declare type Info = Partial<Express.Multer.File & ManagedUpload.SendData & S3.Types.PutObjectRequest & sharp.OutputInfo>;
+export type EFile = Express.Multer.File & EStream & Partial<S3.Types.PutObjectRequest>;
+export type Info = Partial<Express.Multer.File & ManagedUpload.SendData & S3.Types.PutObjectRequest & sharp.OutputInfo>;
 export interface S3Storage {
     opts: S3StorageOptions;
     sharpOpts: SharpOptions;
@@ -21,6 +21,7 @@ export declare class S3Storage implements StorageEngine {
         Bucket: string;
         Key: typeof defaultKey;
         multiple: boolean;
+        multipart: boolean;
     };
     constructor(options: S3StorageOptions);
     _handleFile(req: Request, file: EFile, cb: (error?: any, info?: Info) => void): void;

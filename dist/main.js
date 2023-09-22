@@ -4,11 +4,14 @@ var __rest = (this && this.__rest) || function (s, e) {
     for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p) && e.indexOf(p) < 0)
         t[p] = s[p];
     if (s != null && typeof Object.getOwnPropertySymbols === "function")
-        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) if (e.indexOf(p[i]) < 0)
-            t[p[i]] = s[p[i]];
+        for (var i = 0, p = Object.getOwnPropertySymbols(s); i < p.length; i++) {
+            if (e.indexOf(p[i]) < 0 && Object.prototype.propertyIsEnumerable.call(s, p[i]))
+                t[p[i]] = s[p[i]];
+        }
     return t;
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+exports.S3Storage = void 0;
 const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const sharp = require("sharp");
@@ -21,8 +24,8 @@ class S3Storage {
         if (!options.s3) {
             throw new Error('You have to specify s3 for AWS S3 to work.');
         }
-        this.opts = Object.assign({}, S3Storage.defaultOptions, options);
-        this.sharpOpts = get_sharp_options_1.default(options);
+        this.opts = Object.assign(Object.assign({}, S3Storage.defaultOptions), options);
+        this.sharpOpts = (0, get_sharp_options_1.default)(options);
         if (!this.opts.Bucket) {
             throw new Error('You have to specify Bucket for AWS S3 to work.');
         }
@@ -83,29 +86,29 @@ class S3Storage {
         let { stream, mimetype } = file;
         const { ACL, ContentDisposition, ContentType: optsContentType, StorageClass, ServerSideEncryption, Metadata, } = opts;
         if (opts.multiple && Array.isArray(opts.resize) && opts.resize.length > 0) {
-            const sizes = rxjs_1.from(opts.resize);
+            const sizes = (0, rxjs_1.from)(opts.resize);
             sizes
-                .pipe(operators_1.map((size) => {
-                const resizerStream = transformer_1.default(sharpOpts, size);
+                .pipe((0, operators_1.map)((size) => {
+                const resizerStream = (0, transformer_1.default)(sharpOpts, size);
                 if (size.suffix === 'original') {
                     size.Body = stream.pipe(sharp({ animated: true }));
                 }
                 else {
-                    if (mimetype.includes('gif') || mimetype.includes('webp'))
-                        size.Body = stream.pipe(sharp({ animated: true }));
-                    else
+                    if (!mimetype.includes('gif') || !mimetype.includes('webp'))
+                        //size.Body = stream.pipe(sharp({ animated: true }));
+                        //else
                         size.Body = stream.pipe(resizerStream);
                 }
                 return size;
-            }), operators_1.mergeMap((size) => {
+            }), (0, operators_1.mergeMap)((size) => {
                 const meta = { stream: size.Body };
                 const getMetaFromSharp = meta.stream.toBuffer({
                     resolveWithObject: true,
                 });
-                return rxjs_1.from(getMetaFromSharp.then((result) => {
-                    return Object.assign({}, size, result.info, { ContentType: result.info.format, currentSize: result.info.size });
+                return (0, rxjs_1.from)(getMetaFromSharp.then((result) => {
+                    return Object.assign(Object.assign(Object.assign({}, size), result.info), { ContentType: result.info.format, currentSize: result.info.size });
                 }));
-            }), operators_1.mergeMap((size) => {
+            }), (0, operators_1.mergeMap)((size) => {
                 const { Body, ContentType } = size;
                 const keyDot = params.Key.split('.');
                 let key = `${params.Key}-${size.suffix}`;
@@ -113,7 +116,7 @@ class S3Storage {
                     keyDot.pop();
                     key = `${keyDot.join('.')}-${size.suffix}.${params.Key.split('.')[keyDot.length]}`;
                 }
-                let newParams = Object.assign({}, params, { Body,
+                let newParams = Object.assign(Object.assign({}, params), { Body,
                     ContentType, Key: size.directory ? `${size.directory}/${key}` : key });
                 const upload = opts.s3.upload(newParams);
                 let currentSize = { [size.suffix]: 0 };
@@ -122,23 +125,23 @@ class S3Storage {
                         currentSize[size.suffix] = ev.total;
                     }
                 });
-                const upload$ = rxjs_1.from(upload.promise().then((result) => {
+                const upload$ = (0, rxjs_1.from)(upload.promise().then((result) => {
                     // tslint:disable-next-line
                     const { Body } = size, rest = __rest(size, ["Body"]);
-                    return Object.assign({}, result, rest, { currentSize: size.currentSize || currentSize[size.suffix] });
+                    return Object.assign(Object.assign(Object.assign({}, result), rest), { currentSize: size.currentSize || currentSize[size.suffix] });
                 }));
                 return upload$;
-            }), operators_1.toArray())
+            }), (0, operators_1.toArray)())
                 .subscribe((res) => {
                 const mapArrayToObject = res.reduce((acc, curr) => {
                     // tslint:disable-next-line
                     const { suffix, ContentType, size, format, channels, options, currentSize } = curr, rest = __rest(curr, ["suffix", "ContentType", "size", "format", "channels", "options", "currentSize"]);
-                    acc[curr.suffix] = Object.assign({ ACL,
+                    acc[curr.suffix] = Object.assign(Object.assign({ ACL,
                         ContentDisposition,
                         StorageClass,
                         ServerSideEncryption,
-                        Metadata }, rest, { size: currentSize, ContentType: optsContentType || ContentType });
-                    mimetype = mime_types_1.lookup(ContentType) || `image/${ContentType}`;
+                        Metadata }, rest), { size: currentSize, ContentType: optsContentType || ContentType });
+                    mimetype = (0, mime_types_1.lookup)(ContentType) || `image/${ContentType}`;
                     return acc;
                 }, {});
                 mapArrayToObject.mimetype = mimetype;
@@ -147,36 +150,36 @@ class S3Storage {
         }
         else {
             let currentSize = 0;
-            const resizerStream = transformer_1.default(sharpOpts, sharpOpts.resize);
-            let newParams = Object.assign({}, params, { Body: stream.pipe(resizerStream) });
+            const resizerStream = (0, transformer_1.default)(sharpOpts, sharpOpts.resize);
+            let newParams = Object.assign(Object.assign({}, params), { Body: stream.pipe(resizerStream) });
             const meta = { stream: newParams.Body };
-            const meta$ = rxjs_1.from(meta.stream.toBuffer({
+            const meta$ = (0, rxjs_1.from)(meta.stream.toBuffer({
                 resolveWithObject: true,
             }));
             meta$
-                .pipe(operators_1.map((metadata) => {
+                .pipe((0, operators_1.map)((metadata) => {
                 newParams.ContentType = opts.ContentType || metadata.info.format;
                 return metadata;
-            }), operators_1.mergeMap((metadata) => {
+            }), (0, operators_1.mergeMap)((metadata) => {
                 const upload = opts.s3.upload(newParams);
                 upload.on('httpUploadProgress', function (ev) {
                     if (ev.total) {
                         currentSize = ev.total;
                     }
                 });
-                const upload$ = rxjs_1.from(upload.promise().then((res) => {
-                    return Object.assign({}, res, metadata.info);
+                const upload$ = (0, rxjs_1.from)(upload.promise().then((res) => {
+                    return Object.assign(Object.assign({}, res), metadata.info);
                 }));
                 return upload$;
             }))
                 .subscribe((result) => {
                 // tslint:disable-next-line
                 const { size, format, channels } = result, rest = __rest(result, ["size", "format", "channels"]);
-                const endRes = Object.assign({ ACL,
+                const endRes = Object.assign(Object.assign({ ACL,
                     ContentDisposition,
                     StorageClass,
                     ServerSideEncryption,
-                    Metadata }, rest, { size: currentSize || size, ContentType: opts.ContentType || format, mimetype: mime_types_1.lookup(result.format) || `image/${result.format}` });
+                    Metadata }, rest), { size: currentSize || size, ContentType: opts.ContentType || format, mimetype: (0, mime_types_1.lookup)(result.format) || `image/${result.format}` });
                 cb(null, JSON.parse(JSON.stringify(endRes)));
             }, cb);
         }
@@ -198,13 +201,14 @@ class S3Storage {
         }, cb);
     }
 }
+exports.S3Storage = S3Storage;
 S3Storage.defaultOptions = {
     ACL: process.env.AWS_ACL || 'public-read',
     Bucket: process.env.AWS_BUCKET || null,
     Key: get_filename_1.default,
     multiple: false,
+    multipart: true, // Enable multipart uploads
 };
-exports.S3Storage = S3Storage;
 function s3Storage(options) {
     return new S3Storage(options);
 }
