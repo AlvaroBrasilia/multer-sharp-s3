@@ -94,9 +94,9 @@ class S3Storage {
                     size.Body = stream.pipe(sharp({ animated: true }));
                 }
                 else {
-                    if (!mimetype.includes('gif') || !mimetype.includes('webp'))
-                        //size.Body = stream.pipe(sharp({ animated: true }));
-                        //else
+                    if (mimetype.includes('gif') || mimetype.includes('webp'))
+                        size.Body = stream.pipe(sharp({ animated: true }));
+                    else
                         size.Body = stream.pipe(resizerStream);
                 }
                 return size;

@@ -9,7 +9,7 @@ let dynamicParamMethods = new Map([
     ['trim', 'trim'],
 ]);
 function transformer(options, size) {
-    let imageStream = sharp();
+    let imageStream = sharp({ animated: true });
     for (const [key, value] of Object.entries(options)) {
         if (value) {
             imageStream = resolveImageStream(key, value, size, imageStream);

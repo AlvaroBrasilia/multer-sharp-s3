@@ -13,7 +13,7 @@ function transformer(
   options: SharpOptions,
   size: ResizeOption
 ): sharp.Sharp {
-  let imageStream = sharp()
+  let imageStream:any = sharp({ animated: true })
   for (const [key, value] of Object.entries(options)) {
     if (value) {
       imageStream = resolveImageStream(key, value, size, imageStream)
