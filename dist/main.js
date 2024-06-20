@@ -16,6 +16,7 @@ const rxjs_1 = require("rxjs");
 const operators_1 = require("rxjs/operators");
 const sharp = require("sharp");
 const mime_types_1 = require("mime-types");
+const stream_1 = require("stream");
 const get_sharp_options_1 = require("./get-sharp-options");
 const transformer_1 = require("./transformer");
 const get_filename_1 = require("./get-filename");
@@ -91,13 +92,13 @@ class S3Storage {
                 .pipe((0, operators_1.map)((size) => {
                 const resizerStream = (0, transformer_1.default)(sharpOpts, size);
                 if (size.suffix === 'original') {
-                    size.Body = stream.pipe(sharp({ animated: true }));
+                    size.Body = stream.pipe(sharp({ animated: true }).clone());
                 }
                 else {
                     if (mimetype.includes('gif') || mimetype.includes('webp'))
-                        size.Body = stream.pipe(sharp({ animated: true }));
+                        size.Body = stream.pipe(sharp({ animated: true }).clone());
                     else
-                        size.Body = stream.pipe(resizerStream);
+                        size.Body = stream.pipe(resizerStream.clone());
                 }
                 return size;
             }), (0, operators_1.mergeMap)((size) => {
@@ -110,6 +111,7 @@ class S3Storage {
                 }));
             }), (0, operators_1.mergeMap)((size) => {
                 const { Body, ContentType } = size;
+                const streamCopy = new stream_1.PassThrough();
                 const keyDot = params.Key.split('.');
                 let key = `${params.Key}-${size.suffix}`;
                 if (keyDot.length > 1) {

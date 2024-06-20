@@ -6,6 +6,7 @@ import { ManagedUpload } from 'aws-sdk/lib/s3/managed_upload'
 import { StorageEngine } from 'multer'
 import { Request } from 'express'
 import { S3 } from 'aws-sdk'
+import { PassThrough } from 'stream'
 import getSharpOptions from './get-sharp-options'
 import transformer from './transformer'
 import defaultKey from './get-filename'
@@ -127,12 +128,12 @@ export class S3Storage implements StorageEngine {
           map((size) => {
             const resizerStream = transformer(sharpOpts, size)
             if (size.suffix === 'original') {
-              size.Body = stream.pipe(sharp({ animated: true }))
+              size.Body = stream.pipe(sharp({ animated: true }).clone())
             } else {
               if (mimetype.includes('gif') || mimetype.includes('webp'))
-                size.Body = stream.pipe(sharp({ animated: true }));
+                size.Body = stream.pipe(sharp({ animated: true }).clone());
               else
-                size.Body = stream.pipe(resizerStream);
+                size.Body = stream.pipe(resizerStream.clone());
             }
             return size
           }),
@@ -154,6 +155,7 @@ export class S3Storage implements StorageEngine {
           }),
           mergeMap((size) => {
             const { Body, ContentType } = size
+            const streamCopy = new PassThrough()
             const keyDot = params.Key.split('.')
             let key = `${params.Key}-${size.suffix}`
             if (keyDot.length > 1) {
