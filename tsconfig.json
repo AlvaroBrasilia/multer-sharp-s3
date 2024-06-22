@@ -9,6 +9,7 @@
     "declarationMap": true,
     "declarationDir": "dist/types",
     "types": [
+      "node",
       "jest",
       "core-js"
     ],
